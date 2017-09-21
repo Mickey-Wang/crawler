@@ -5,7 +5,7 @@
   "private": true,
   "description": "网络爬虫与数据库操作",
   "scripts": {
-    "crawl": "cross-env DEBUG=blog:* node update/all.js",
+    "crawler": "cross-env DEBUG=blog:* node update/all.js",
     "server": "node app.js"
   },
   "engines": {

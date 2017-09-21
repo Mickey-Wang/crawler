@@ -18,4 +18,4 @@ exports.port = 3000;
 
 // 定时更新
 // 任务执行规则，参考README
-exports.autoUpdate = '* */5 * * * *';
+exports.autoUpdate = '* */1 * * * *';
