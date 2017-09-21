@@ -9,6 +9,12 @@
 + **snippets** 目录：文章内容用到的代码片段
 + **book.md** 文件：文章内容
 
+## 项目启动命令
+
+scripts中有两个命令：
++ crawler命令为爬取网站内容到数据库
++ server命令为带有定时功能并可展示数据（localhost:3000）的服务器程序指令
+
 ## 项目用到的相关模块
 
 + request：使用request模块来获取网页内容
@@ -19,10 +25,19 @@
   + 可通过cross-env进行跨平台设置，cross-env DEBUG=blog:*
   + Windows系统在命令行下执行：set DEBUG=blog:*
   + Linux系统在命令行下执行：export DEBUG=blog:*
++ cron：使用[cron模块](https://www.npmjs.com/package/cron)来定时执行任务
 
 ## 开发过程中的难点或盲点
 
 1. JS中[match](http://www.w3school.com.cn/jsref/jsref_match.asp)与[exec](http://www.w3school.com.cn/jsref/jsref_exec_regexp.asp)方法的区分  
+2. node中的cron模块的定时规则与Linux中的定时任务工具[crontab语法规则](http://crontab.org/)大致相同，只是cron多了一个秒单位。具体如下：f1 f2 f3 f4 f5 f6
+   + f1表示秒钟，f2表示分钟，f3表示小时，f4表示一个月份中的第几日，f5表示月份，f6表示一个星期中的第几天。
+   + 各部分的取值含义如下（以f1部分为例，其他部分类似）：
+     + 当值为*时，表示每秒执行一次；
+     + 当值为a-b时，表示从第a秒到第b秒这段时间内执行一次；
+     + 当值为*/n时，表示每隔n秒执行一次；
+     + 当值为a-b/n时，表示从第a秒到第b秒这段时间内每隔n秒执行一次。
+
 
 TODO
 =====
