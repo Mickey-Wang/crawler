@@ -38,15 +38,70 @@ scripts中有两个命令：
      + 当值为*/n时，表示每隔n秒执行一次；
      + 当值为a-b/n时，表示从第a秒到第b秒这段时间内每隔n秒执行一次。
 3. 使用node内建模块child_process模块来执行文件
-4. 处理uncaughtException事件
+   + child_process模块可以通过spawn()和exec()两种方法来启动一个新进程
+   + 使用spawn()启动子进程
+    ```javascript
+        var child_process = require('child_process');
+        
+        // spawn()是直接运行文件的，而在Windows系统下dir命令是cmd.exe的内置命令
+        // 并不实际存在名为dir.exe的可执行文件，所以这里需要判断一下
+        if(process.platform === 'win32'){
+            var dir = child_process.spawn('cmd.exe', ['/s', '/c', 'dir', 'c:\\']);
+        }else {
+            var dir = child_process.spawn('dir', ['/']);
+        }
+        
+        // 当子进程有输出时，自动将其输出到当前进程的标准输出流
+        dir.stdout.pipe(process.stdout);
+        dir.stderr.pipe(process.stderr);
+        
+        // 进程结束时触发close事件
+        dir.on('close', function(code) {
+          console.log('进程结束，代码=%d', code);
+        })
+    ```
+    + 使用exec()启动子进程
+    ```javascript
+        var child_process = require('child_process');
+
+        // 选项
+        var options = {
+           // 输出缓冲区的大小，默认是200KB，如果进程的输出超过这个值，会抛出异常，并结束该进程
+           maxBuffer: 200*1024
+        };
+        
+        var dir = child_process.exec('dir *',options, function(err, stdout, stderr) {
+            if(err) throw err;
+            console.log('stdout: ' + stdout);
+            console.log('stderr: ' + stderr);
+        });
+    ```
+    + spawn和exec方法的区别
+      + spawn执行的命令必须是一个实际存在的可执行文件，而exec执行的命令则与在命令行下执行的命令一样；
+      + exec可以在回调函数中一次性返回子进程在stdout和stderr中输出的内容，但调用两者都会返回一个ChildProcess实例，通过监听其stdout和stderr属性的data事件可以获取到进程的输出；
+      + exec可以指定maxBUffer参数，默认200KB，如果子进程的输出大于这个值，将会抛出Error: stdout maxBuffer exceeded异常，并结束该子进程；
+    + 当执行Node.js程序时，用spawn执行node的可执行文件
+    ```javascript
+        var child_process = require('child_process');
+        function execNodeFile (file){
+            var node = spawn(process.execPath, [file]);
+            node.stdout.pipe(process.stdout);
+            node.stderr.pipe(process.stderr);
+            node.on('close', function (code) {
+              console.log('进程结束，代码=%d', code);
+            });  
+        }
+        execNodeFile('abc.js')
+    ```
+4. **处理uncaughtException事件**
    + 大多数情况下，异步I/O操作（如本地磁盘I/O、网络I/O），所发生的错误是无法被try/catch捕获的。如果其所抛出的异常没有被捕捉到，将会导致Node.js进程直接退出。而本项目中有大量的网络I/O操作。
    + 在Node.js中，如果一个抛出的异常没有被try/catch捕获到，其会尝试将这些错误交由uncaughtException事件处理程序来处理，仅当没有注册该事件处理程序时，才会最终导致进程直接退出。因此我们在app.js的末尾做了处理。
-5. 使用pm2来启动程序
+5. 使用**pm2**来启动程序
    + 有时候，由于Node.js自身的BUg或者使用到第三方C++模块的缺陷而导致一些底层的错误，比如在Linux系统下偶尔会发生段错误（segment fault）导致程序崩溃，此时上面提到的处理uncaughtException事件的方法就不适用了。
    + pm2是一个功能强大的进程管理器，通过pm2 start来启动Node.js程序，当该进程异常退出时，pm2会自动尝试重启进程，这样可以保证Node.js应用稳定运行。同时pm2还可以很方便地查看其所启动的各个进程的内存占用和日志等信息。
    + 全局安装 npm install -g pm2
-   + 加入要启动的程序文件是~/app.js，在命令行下执行pmw start ~/app.js即可启动程序，执行pm2 stop ~/app.js即可停止该程序。
-6.对于某些使用GBK字符编码的网站，如淘宝网，因为JS内部的字符编码是使用Unicode来表示的，因此在编写爬虫来处理这些GBK编码的网页内容时还需要将其转换成UTF-8编码。
+   + 加入要启动的程序文件是~/app.js，在命令行下执行pmw start ~/app.js即可启动程序，执行pm2 stop ~/app.js即可停止该程序。 
+6. 对于某些使用GBK字符编码的网站，如淘宝网，因为JS内部的字符编码是使用Unicode来表示的，因此在编写爬虫来处理这些GBK编码的网页内容时还需要将其转换成UTF-8编码。
    + 比如运行下面程序来抓取一个GBK编码的网页：
     ```javascript
         var request = require('request');
